@@ -1,0 +1,57 @@
+server:
+  port: 9411
+logging.pattern.console: "%d{&quot;yyyy-MM-dd'T'HH:mm:ss.SSSZ&quot;} %highlight(%-5level) [%thread] rid=[%X{rid}] %logger{36} - %msg %rEx{30}%n"
+pitchfork:
+  validators:
+    accept-null-timestamps: true
+    max-timestamp-drift-seconds: -1
+  ingress:
+    kafka:
+      enabled: false
+      poll-duration-ms: 1000
+      auto-commit-internal-ms: 1000
+      enable-auto-commit: true
+      auto-offset-reset: "earliest"
+      session-timeout-ms: 60000
+      bootstrap-servers: kafka-service:9092
+      source-topics:
+        - zipkin
+      source-format: JSON_V2
+  forwarders:
+    haystack:
+      kinesis:
+        enabled: false
+        region-name: "us-west-1"
+        stream-name: "proto-spans"
+        endpoint-config-type: REGION
+        authentication-type: DEFAULT
+      kafka:
+        enabled: false
+        bootstrap-servers: kafka-service:9092
+        topic: proto-spans
+    logging:
+      enabled: true
+      log-full-span: false
+    zipkin:
+      http:
+        enabled: false
+        endpoint: http://localhost:9411/api/v2/spans
+        max-inflight-requests: 256
+        write-timeout-millis: 10000
+        compression-enabled: true
+
+management:
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /
+info:
+  app:
+    name: Pitchfork
+    description: Pitchfork lifts Zipkin tracing data into Haystack.
+    readme: https://github.com/HotelsDotCom/pitchfork/blob/master/README.md
